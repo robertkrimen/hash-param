@@ -5,7 +5,7 @@ use strict;
 
 =head1 NAME
 
-Hash::Param - CGI/Catalyst::Request-like parameter-hash accessor/mutator store
+Hash::Param - CGI/Catalyst::Request-like parameter-hash accessor/mutator
 
 =head1 VERSION
 
@@ -35,15 +35,20 @@ sub BUILD {
     my $self = shift;
     my $given = shift;
 
-    my $is = $given->{is};
-    if ($is =~ m/^(?:rw|readwrite|writable)$/i) {
-        $self->_is_rw(1);
+    if (my $is = $given->{is}) {
+        if ($is =~ m/^(?:rw|readwrite|writable)$/i) {
+            $self->_is_rw(1);
+        }
+        elsif ($is =~ m/^(?:ro|readonly)$/i) {
+            $self->_is_rw(0);
+        }
+        else {
+            croak "Don't understand this read/write designation: \"$is\"";
+        }
     }
-    elsif ($is =~ m/^(?:ro|readonly)$/i) {
-        $self->_is_rw(0);
-    }
-    else {
-        croak "Don't understand this read/write designation: \"$is\"";
+
+    for (qw/params hash data from/) {
+        last if $self->{_parameters} ||= $given->{$_};
     }
 }
 
@@ -60,7 +65,8 @@ sub params {
             $self->_parameters($_[0]);
         }
         else {
-            my @params = map { scalar $self->option($_) } @_;
+            my @params = map { $self->_parameters->{$_} } @_;
+            @params = map { ref $_ eq "ARRAY" ? [ @$_ ] : $_ } @params unless $self->_is_rw;
             return wantarray ? @params : \@params;
         }
     }
@@ -118,8 +124,8 @@ sub param {
     }
     elsif (@_ > 1) {
         my $field = shift;
-        croak "Unable to modify readonly parameter @{[ $field || '' ]}" unless $self->_is_rw;
-        $self->_parameters->{$field} = [@_];
+        croak "Unable to modify readonly parameter \"@{[ $field || '' ]}\"" unless $self->_is_rw;
+        $self->_parameters->{$field} = @_ > 1 ? [ @_ ] : $_[0];
     }
 }
 
