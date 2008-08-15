@@ -13,7 +13,27 @@ Version 0.01
 
 =head1 SYNPOSIS
 
+    my $params = Hash::Param->new(parameters => {
+        qw/a 1 b 2 c 3/,
+        d => [qw/4 5 6 7/],
+    })
+
+    $result = $params->param( a )           # Returns 1
+    $result = $params->param( d )           # Returns 4
+    @result = $params->param( d )           # Returns 4, 5, 6, 7
+    @result = $params->params               # Returns a, b, c, d
+    $result = $params->params               # Returns { a => , b => 2,
+                                                        c => 3, d => [ 4, 5, 6, 7 ] }
+    @result = $params->params( a, b, d )    # Returns 1, 2, [ 4, 5, 6, 7 ]
+    %result = $params->slice( a, b )        # Returns a => 1, b => 2
+
+              $params->param( a => 8 )      # Sets a to 8
+              $params->param( a => 8, 9 )   # Sets a to [ 8, 9 ]
+
+
 =head1 DESCRIPTION
+
+Hash::Param provides a CGI-param-like accessor/mutator for a hash
 
 =cut
 
@@ -52,6 +72,20 @@ sub BUILD {
     }
 }
 
+=head1 METHODS
+
+=head2 $params->params( <hash> )
+
+=head2 $params->params( <param>, <param>, ... )
+
+=head2 $params->params
+
+=head2 $params->parameters
+
+An alias for ->params
+
+=cut
+
 sub parameters {
     my $self = shift;
     return $self->params(@_);
@@ -75,20 +109,22 @@ sub params {
     }
 }
 
-sub slice {
-    my $self = shift;
-    my $parameters = $self->_parameters;
-    return $self->_is_rw ? Hash::Slice::slice $parameters, @_ : Hash::Slice::clone_slice $parameters, @_;
-}
+=head2 $params->param( <param> )
+
+=head2 $params->param( <param> => <value> )
+
+=head2 $params->param( <param> => <value>, <value>, ... )
+
+=head2 $params->param
+
+=head2 $params->parameters
+
+An alias for ->param
+
+=cut
 
 sub parameter {
     my $self = shift;
-    return $self->param(@_);
-}
-
-sub get {
-    my $self = shift;
-    return $self->params(@_) if @_ > 1;
     return $self->param(@_);
 }
 
@@ -127,6 +163,30 @@ sub param {
         croak "Unable to modify readonly parameter \"@{[ $field || '' ]}\"" unless $self->_is_rw;
         $self->_parameters->{$field} = @_ > 1 ? [ @_ ] : $_[0];
     }
+}
+
+=head2 $params->get( <param> )
+
+=head2 $params->get( <param>, <param>, ... )
+
+=head2 $params->get
+
+=cut
+
+sub get {
+    my $self = shift;
+    return $self->params(@_) if @_ > 1;
+    return $self->param(@_);
+}
+
+=head2 $params->slice( <param>, <param>, ... )
+
+=cut
+
+sub slice {
+    my $self = shift;
+    my $parameters = $self->_parameters;
+    return $self->_is_rw ? Hash::Slice::slice $parameters, @_ : Hash::Slice::clone_slice $parameters, @_;
 }
 
 =head1 SYNOPSIS
