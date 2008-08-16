@@ -9,7 +9,7 @@ Hash::Param - CGI/Catalyst::Request-like parameter-hash accessor/mutator
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =head1 SYNPOSIS
 
@@ -37,7 +37,7 @@ Hash::Param provides a CGI-param-like accessor/mutator for a hash
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Moose;
 use Carp::Clan;
@@ -74,50 +74,47 @@ sub BUILD {
 
 =head1 METHODS
 
-=head2 $params->params( <hash> )
+=head2 Hash::Param->new( [ params => <params>, is => <is> ] )
 
-=head2 $params->params( <param>, <param>, ... )
+Returns a new Hash::Param object with the given parameters
 
-=head2 $params->params
+<params> should be a HASH reference (the object will be initialized with an empty hash if none is given)
 
-=head2 $params->parameters
+<is> should be either C<ro> or C<rw> to indicate where the object is read-only or read-write, respectively
 
-An alias for ->params
-
-=cut
-
-sub parameters {
-    my $self = shift;
-    return $self->params(@_);
-}
-
-sub params {
-    my $self = shift;
-    if (@_) {
-        if (1 == @_ && ref $_[0] eq "HASH") {
-            croak "Unable to modify readonly parameters" unless $self->_is_rw;
-            $self->_parameters($_[0]);
-        }
-        else {
-            my @params = map { $self->_parameters->{$_} } @_;
-            @params = map { ref $_ eq "ARRAY" ? [ @$_ ] : $_ } @params unless $self->_is_rw;
-            return wantarray ? @params : \@params;
-        }
-    }
-    else {
-        return wantarray ? keys %{ $self->_parameters } : $self->_is_rw ? $self->_parameters : { %{ $self->_parameters } };
-    }
-}
+The object will be read-write by default
 
 =head2 $params->param( <param> )
 
+Returns the value of <param>
+
+If the <param> value is an ARRAY reference:
+
+=over
+
+=item In list context, returns every value of the ARRAY
+
+=item In scalar context, returns just the first value of the ARRAY
+
+=back
+
 =head2 $params->param( <param> => <value> )
+
+Sets the value of <param> to <value>
+
+Throws an error if $params is read-only
 
 =head2 $params->param( <param> => <value>, <value>, ... )
 
+Sets the value of <param> to an ARRAY reference consisting of [ <value>, <value>, ... ]
+
+Throws an error if $params is read-only
+
 =head2 $params->param
 
-=head2 $params->parameters
+Returns a list of every param name
+
+=head2 $params->parameter
 
 An alias for ->param
 
@@ -165,21 +162,102 @@ sub param {
     }
 }
 
+=head2 $params->params( <param>, <param>, ... )
+
+Returns a list containing with value of each <param>
+
+Returns an ARRAY reference in scalar context
+
+If $params is read-only, then each ARRAY reference value will be copied first (if any)
+
+=head2 $params->params
+
+Returns a hash of the parameters stored in $param
+
+In scalar context, will return a HASH reference (which will be copied first if $params is read-only)
+
+=head2 $params->params( <hash> )
+
+Sets the parameters of $params via <hash> (which should be a HASH reference)
+
+Throws an error if $params is read-only
+
+=head2 $params->parameters
+
+An alias for ->params
+
+=cut
+
+sub parameters {
+    my $self = shift;
+    return $self->params(@_);
+}
+
+sub params {
+    my $self = shift;
+    if (@_) {
+        if (1 == @_ && ref $_[0] eq "HASH") {
+            croak "Unable to modify readonly parameters" unless $self->_is_rw;
+            $self->_parameters($_[0]);
+        }
+        else {
+            my @params = map { $self->_parameters->{$_} } @_;
+            @params = map { ref $_ eq "ARRAY" ? [ @$_ ] : $_ } @params unless $self->_is_rw;
+            return wantarray ? @params : \@params;
+        }
+    }
+    else {
+        return wantarray ? keys %{ $self->_parameters } : $self->_is_rw ? $self->_parameters : { %{ $self->_parameters } };
+    }
+}
+
+=head2 $params->data( <hash> )
+
+Sets the parameters of $params via <hash> (which should be a HASH reference)
+
+Throws an error if $params is read-only
+
+=cut
+
+sub data {
+    my $self = shift;
+    $self->params(shift);
+}
+
 =head2 $params->get( <param> )
+
+Returns the value of <param>
+
+Does the same as $param->param( <param> )
 
 =head2 $params->get( <param>, <param>, ... )
 
+Returns a list containing with value of each <param>
+
+Does the same as $param->params( <param>, <param>, ... )
+
 =head2 $params->get
+
+Returns a hash of the parameters stored in $param
+
+Does the same as $param->params
 
 =cut
 
 sub get {
     my $self = shift;
+    return $self->params unless @_;
     return $self->params(@_) if @_ > 1;
     return $self->param(@_);
 }
 
 =head2 $params->slice( <param>, <param>, ... )
+
+Returns a hash slice of <param>, <param>, ...
+
+Returns a HASH reference in scalar context
+
+If $params is read-only, then the slice will be cloned
 
 =cut
 
@@ -208,9 +286,6 @@ L<http://github.com/robertkrimen/hash-param/tree/master>
 Please report any bugs or feature requests to C<bug-hash-param at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Hash-Param>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
-
-
 
 =head1 SUPPORT
 
