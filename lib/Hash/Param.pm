@@ -9,7 +9,7 @@ Hash::Param - CGI/Catalyst::Request-like parameter-hash accessor/mutator
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =head1 SYNPOSIS
 
@@ -37,7 +37,7 @@ Hash::Param provides a CGI-param-like accessor/mutator for a hash
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Moose;
 use Carp::Clan;
@@ -68,7 +68,8 @@ sub BUILD {
     }
 
     for (qw/params hash data from/) {
-        last if $self->{_parameters} ||= $given->{$_};
+        last if $self->{_parameters};
+        $self->_parameters($given->{$_}) if $given->{$_};
     }
 }
 
@@ -266,6 +267,9 @@ sub slice {
     my $parameters = $self->_parameters;
     return $self->_is_rw ? Hash::Slice::slice $parameters, @_ : Hash::Slice::clone_slice $parameters, @_;
 }
+
+use MooseX::MakeImmutable;
+MooseX::MakeImmutable->lock_down;
 
 =head1 SYNOPSIS
 
