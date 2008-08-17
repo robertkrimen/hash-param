@@ -9,7 +9,7 @@ Hash::Param - CGI/Catalyst::Request-like parameter-hash accessor/mutator
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =head1 SYNPOSIS
 
@@ -37,7 +37,7 @@ Hash::Param provides a CGI-param-like accessor/mutator for a hash
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Moose;
 use Carp::Clan;

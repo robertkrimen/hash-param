@@ -27,7 +27,7 @@ _END_
 Carp::Clan
 Hash::Slice 0.03
 Moose
-MooseX::MakeImmutable
+MooseX::MakeImmutable 0.02
 _END_
 }
 
